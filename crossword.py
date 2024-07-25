@@ -1,5 +1,5 @@
 class Variable:
-    # test##
+    
     ACROSS = "across"
     DOWN = "down"
 
