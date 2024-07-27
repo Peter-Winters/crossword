@@ -1,5 +1,5 @@
 import sys
-
+from collections import deque
 from crossword import *
 
 
@@ -143,12 +143,12 @@ class CrosswordCreator:
                 for y in self.crossword.neighbors(x):
                     arcs.append((x, y))
         while len(arcs) > 0:
-            X, Y = dequeue(arcs)
-            if revise(X, Y):
+            X, Y = deque(arcs)
+            if self.revise(X, Y):
                 if len(X.domain) == 0:
                     return False
                 for Z in X.neighbors - {Y}:
-                    enqueue(arcs, (Z, X))
+                    arcs.append((Z, X))
         return True
 
     def assignment_complete(self, assignment):
