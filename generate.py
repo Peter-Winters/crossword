@@ -117,13 +117,16 @@ class CrosswordCreator:
         Return True if a revision was made to the domain of `x`; return
         False if no revision was made.
         """
+        revised = False
         if self.crossword.overlaps[x, y] == None:
-            return False
+            return revised
         for i, j in self.crossword.overlaps[x, y]:
             for xword, yword in self.domains[x], self.domains[y]:
                 if xword[i] != yword[j]:
                     self.domains[x].remove(xword)
-                    return True
+                    revised = True
+                    return revised
+        return revised
 
     def ac3(self, arcs=None):
         """
@@ -134,7 +137,19 @@ class CrosswordCreator:
         Return True if arc consistency is enforced and no domains are empty;
         return False if one or more domains end up empty.
         """
-        raise NotImplementedError
+        if arcs == None:
+            arcs = []
+            for x in self.crossword.variables:
+                for y in self.crossword.neighbors(x):
+                    arcs.append((x, y))
+        while len(arcs) > 0:
+            X, Y = dequeue(arcs)
+            if revise(X, Y):
+                if len(X.domain) == 0:
+                    return False
+                for Z in X.neighbors - {Y}:
+                    enqueue(arcs, (Z, X))
+        return True
 
     def assignment_complete(self, assignment):
         """
