@@ -105,9 +105,12 @@ class CrosswordCreator:
          constraints; in this case, the length of the word.)
         """
         for var in self.crossword.variables:
+            words_to_remove = []
             for word in self.domains[var]:
                 if len(word) != var.length:
-                    self.domains[var].remove(word)
+                    words_to_remove.append(word)
+            for word_rem in words_to_remove:
+                self.domains[var].remove(word_rem)
 
     def revise(self, x, y):
         """
@@ -144,7 +147,7 @@ class CrosswordCreator:
                 for y in self.crossword.neighbors(x):
                     arcs.append((x, y))
         while len(arcs) > 0:
-            X, Y = deque(arcs)
+            X, Y = arcs.pop(0)
             if self.revise(X, Y):
                 if len(X.domain) == 0:
                     return False
