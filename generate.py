@@ -1,6 +1,7 @@
 import sys
 from collections import deque
 from crossword import *
+import random
 
 
 class CrosswordCreator:
@@ -156,14 +157,32 @@ class CrosswordCreator:
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        raise NotImplementedError
+        assign = True
+        for key in assignment.keys():
+            if len(assignment[key]) > 1:
+                assign = False
+                break
+        return assign
 
     def consistent(self, assignment):
         """
         Return True if `assignment` is consistent (i.e., words fit in crossword
         puzzle without conflicting characters); return False otherwise.
         """
-        raise NotImplementedError
+        unique = []
+        for var in assignment.keys():
+            for word in self.domains[var]:
+                unique.append(word)
+                if len(word) != var.length:
+                    return False
+
+        if len(unique) != len(set(unique)):
+            return False
+
+        if self.ac3(list(assignment.keys())) == False:
+            return False
+
+        return True
 
     def order_domain_values(self, var, assignment):
         """
@@ -172,7 +191,21 @@ class CrosswordCreator:
         The first value in the list, for example, should be the one
         that rules out the fewest values among the neighbors of `var`.
         """
-        raise NotImplementedError
+        orderdict = {}
+        for word in self.domains[var]:
+            n = 0
+            for neighbor in self.crossword.neighbors(var):
+                if neighbor not in assignment:
+                    for neighbor_words in self.domains[neighbor]:
+                        if word in neighbor_words:
+                            n += 1
+            orderdict[word] = n
+
+        sorted = {k: v for k, v in sorted(orderdict.items(), key=lambda item: item[1])}
+
+        keys = sorted.keys()
+        lstkeys = [k for k in keys]
+        return lstkeys
 
     def select_unassigned_variable(self, assignment):
         """
@@ -182,7 +215,33 @@ class CrosswordCreator:
         degree. If there is a tie, any of the tied variables are acceptable
         return values.
         """
-        raise NotImplementedError
+        minvar = []
+        unassigned = {}
+        minval = min(unassigned.values())
+
+        for var in self.crossword.variables:
+            if var not in assignment:
+                lengthvar = len(self.domains[var])
+                unassigned[var] = lengthvar
+
+        minval = min(unassigned.values())
+        for k, v in unassigned.items():
+            if v == minval:
+                minvar.append(k)
+
+        degree = {}
+        for v in minvar:
+            length_deg = len(self.crossword.neighbors(v))
+            degree[v] = length_deg
+
+        min_deg = min(degree.values())
+        for s, y in degree.items():
+            if y == min_deg:
+                minvar.append(s)
+        if len(minvar) == 1:
+            return minvar[0]
+        else:
+            return random.choice(minvar)
 
     def backtrack(self, assignment):
         """
