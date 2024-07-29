@@ -215,9 +215,7 @@ class CrosswordCreator:
 
         sort = {k: v for k, v in sorted(orderdict.items(), key=lambda item: item[1])}
 
-        keys = sort.keys()
-        lstkeys = [k for k in keys]
-        return lstkeys
+        return list(sort.keys())
 
     def select_unassigned_variable(self, assignment):
         """
