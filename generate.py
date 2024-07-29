@@ -168,12 +168,10 @@ class CrosswordCreator:
         Return True if `assignment` is complete (i.e., assigns a value to each
         crossword variable); return False otherwise.
         """
-        assign = True
-        for key in assignment.keys():
-            if len(assignment[key]) > 1:
-                assign = False
-                break
-        return assign
+        for variable in self.domains:
+            if variable not in assignment:
+                return False
+        return True
 
     def consistent(self, assignment):
         """
@@ -182,16 +180,19 @@ class CrosswordCreator:
         """
         unique = []
         for var in assignment.keys():
-            for word in self.domains[var]:
-                unique.append(word)
-                if len(word) != var.length:
-                    return False
+            unique.append(assignment[var])
+            if len(assignment[var]) != var.length:
+                return False
 
         if len(unique) != len(set(unique)):
             return False
 
-        if self.ac3(list(assignment.keys())) == False:
-            return False
+        for variable in assignment:
+            for neighbor in self.crossword.neighbors(variable):
+                if neighbor in assignment:
+                    i, j = self.crossword.overlaps[variable, neighbor]
+                    if assignment[variable][i] != assignment[neighbor][j]:
+                        return False
 
         return True
 
@@ -212,9 +213,9 @@ class CrosswordCreator:
                             n += 1
             orderdict[word] = n
 
-        sorted = {k: v for k, v in sorted(orderdict.items(), key=lambda item: item[1])}
+        sort = {k: v for k, v in sorted(orderdict.items(), key=lambda item: item[1])}
 
-        keys = sorted.keys()
+        keys = sort.keys()
         lstkeys = [k for k in keys]
         return lstkeys
 
@@ -228,7 +229,6 @@ class CrosswordCreator:
         """
         minvar = []
         unassigned = {}
-        minval = min(unassigned.values())
 
         for var in self.crossword.variables:
             if var not in assignment:
@@ -263,12 +263,11 @@ class CrosswordCreator:
 
         If no assignment is possible, return None.
         """
-        print("assignment", assignment)
         if self.assignment_complete(assignment):
             return assignment
         var = self.select_unassigned_variable(assignment)
-        for value in self.domains(var):
-            if value.consistent(assignment):
+        for value in self.domains[var]:
+            if self.consistent(assignment):
                 assignment[var] = value
                 result = self.backtrack(assignment)
                 if result != None:
