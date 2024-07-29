@@ -2,6 +2,7 @@ import sys
 from collections import deque
 from crossword import *
 import random
+import copy
 
 
 class CrosswordCreator:
@@ -121,15 +122,21 @@ class CrosswordCreator:
         Return True if a revision was made to the domain of `x`; return
         False if no revision was made.
         """
+        copy_domain = copy.deepcopy(self.domains)
+
         revised = False
         if self.crossword.overlaps[x, y] == None:
             return revised
-        for i, j in self.crossword.overlaps[x, y]:
-            for xword, yword in self.domains[x], self.domains[y]:
-                if xword[i] != yword[j]:
-                    self.domains[x].remove(xword)
-                    revised = True
-                    return revised
+        i, j = self.crossword.overlaps[x, y]
+        for xword in copy_domain[x]:
+            match = False
+            for yword in self.domains[y]:
+                if xword[i] == yword[j]:
+                    match = True
+                    break
+            if not match:
+                self.domains[x].remove(xword)
+                revised = True
         return revised
 
     def ac3(self, arcs=None):
@@ -147,12 +154,13 @@ class CrosswordCreator:
                 for y in self.crossword.neighbors(x):
                     arcs.append((x, y))
         while len(arcs) > 0:
-            X, Y = arcs.pop(0)
+            X, Y = arcs.pop(0)  # dequeue X-Y
             if self.revise(X, Y):
-                if len(X.domain) == 0:
+                if len(self.domains[X]) == 0:
                     return False
-                for Z in X.neighbors - {Y}:
-                    arcs.append((Z, X))
+                for Z in self.crossword.neighbors(X):
+                    if Z != Y:
+                        arcs.insert(0, (Z, X))  # enqueue Z-X
         return True
 
     def assignment_complete(self, assignment):
@@ -255,6 +263,7 @@ class CrosswordCreator:
 
         If no assignment is possible, return None.
         """
+        print("assignment", assignment)
         if self.assignment_complete(assignment):
             return assignment
         var = self.select_unassigned_variable(assignment)
